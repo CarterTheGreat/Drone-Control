@@ -7,10 +7,13 @@ int startInd, ind1, ind2, ind3, endInd;
 
 double pos[2];
 
-double frontRight[] =  {260,260};
-double frontLeft[] = {-260,260};
-double rearLeft[] = {-260,-260};
-double rearRight[] =  {260,-260};
+//Based off values of 260
+//rCOS(deg) for x
+//rSIN(deg) for y
+double frontRight[] =  {183,183}; 
+double frontLeft[] = {-183,183};  
+double rearLeft[] = {-183,-183};
+double rearRight[] =  {183,-183};
 
 double FRDist;
 double FLDist;
