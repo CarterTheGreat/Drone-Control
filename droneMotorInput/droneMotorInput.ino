@@ -1,4 +1,17 @@
-
+/*
+ * Pitch & Roll Controll From Power Glove
+ * Pitch & Roll:
+ *        Impplemented to map drone to exactly glove orientation from behind, imverted scale
+ *        Pitch & Roll based off slowing adjacent motors
+ * Yaw:
+ *        No Yaw control implemented, glove needs to be Mk. III for finger control then yaw can be implemented 
+ *        Yaw based off of slowing on pair of diagonal motors & speeding up the other pair of diagional motors
+ *        
+ *        
+ *        
+ * Informational Link on Drone Design
+ * https://www.dronezon.com/learn-about-drones-quadcopters/how-a-quadcopter-works-with-propellers-and-motors-direction-design-explained/
+ */
 char key;
 String data = "";
 String runningS,xS,yS,zS;
@@ -10,10 +23,10 @@ double pos[2];
 //Based off values of 260
 //rCOS(deg) for x
 //rSIN(deg) for y
-double frontRight[] =  {183,183}; 
-double frontLeft[] = {-183,183};  
-double rearLeft[] = {-183,-183};
-double rearRight[] =  {183,-183};
+double frontRight[] =  {183,183}; //CCW
+double frontLeft[] = {-183,183};  //CW
+double rearLeft[] = {-183,-183}; //CCW
+double rearRight[] =  {183,-183}; //CW
 
 double FRDist;
 double FLDist;
