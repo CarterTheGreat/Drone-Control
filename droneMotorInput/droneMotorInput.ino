@@ -1,10 +1,12 @@
 /*
+ * YAW BRANCH
+ * 
  * Pitch & Roll Controll From Power Glove
  * Pitch & Roll:
  *        Impplemented to map drone to exactly glove orientation from behind, imverted scale
  *        Pitch & Roll based off slowing adjacent motors
- * Yaw:
- *        No Yaw control implemented, glove needs to be Mk. III for finger control then yaw can be implemented 
+ * Yaw:  NOTE ~may need to swap cw and ccw motor reading~
+ *        Yaw control implemented, glove needs to be Mk. III for finger control then yaw can be input
  *        Yaw based off of slowing on pair of diagonal motors & speeding up the other pair of diagional motors
  *        
  *        
@@ -14,9 +16,12 @@
  */
 char key;
 String data = "";
+int startInd, ind1, ind2, ind3, ind4, ind5, endInd;
 String runningS,xS,yS,zS;
+String cwS,ccwS;
+
 double x,y,z;
-int startInd, ind1, ind2, ind3, endInd;
+double cw,ccw;
 
 double pos[2];
 
@@ -37,6 +42,9 @@ double FRScale;
 double FLScale;
 double RLScale;
 double RRScale;
+
+double CWScale;
+double CCWScale;
 
 double FROut;
 double FLOut;
@@ -62,10 +70,12 @@ void loop() {
 //Input Allocation---------------------------------------------
 /*
  * Input Format
- * <motorsRunning/xxx/yyy/zzz>
- * ex. 
- *  <1/255/255/255>
- *  <0/0/0/0>
+ * 
+ * <runningS/x/y/z/cw/ccw>
+ * 
+ * ex.   ~neither of these states are possible, just to show max value~
+ *  <1/255/255/255/255/255> 
+ *  <0/0/0/0/0/0>
  */
 
 
@@ -81,69 +91,79 @@ void loop() {
       ind1 = data.indexOf('/');
       ind2 = data.indexOf('/',ind1+1);
       ind3 = data.indexOf('/',ind2+1);
+      ind4 = data.indexOf('/',ind3+1);
+      ind5 = data.indexOf('/',ind4+1);
       endInd = data.indexOf('>');
 
       runningS = data.substring(startInd+1,ind1);
       xS = data.substring(ind1+1,ind2);
       yS = data.substring(ind2+1,ind3);
-      zS = data.substring(ind3+1,endInd);
+      zS = data.substring(ind3+1,ind4);
 
-      Serial.println(startInd);Serial.println(ind1);Serial.println(ind2);Serial.println(ind3);Serial.println(endInd);
+      cwS = data.substring(ind4+1,ind5);
+      ccwS = data.substring(ind5+1,endInd);
+      
       Serial.println("Data: "+data);
       Serial.println("x: "+xS);
       Serial.println("y: "+yS);
       Serial.println("z: "+zS);
+      Serial.println("cw: "+cwS);
+      Serial.println("ccw: "+ccwS);
 
-
+        //Convert string data to #s
         x = xS.toDouble();
         y = yS.toDouble();
         z = zS.toDouble();
-      
-        xS = "";
-        yS = "";
-        zS = "";
+
+        cw = cwS.toDouble();
+        ccw = ccwS.toDouble();
         
+        
+
+        //Map distances on power map
         pos[0] = x;
         pos[1] = y;
-      
+        
         FRDist = sqrt(sq(x-frontRight[0]) + sq(y-frontRight[1]));
         FLDist = sqrt(sq(x-frontLeft[0]) + sq(y-frontLeft[1]));
         RLDist = sqrt(sq(x-rearLeft[0]) + sq(y-rearLeft[1]));
         RRDist = sqrt(sq(x-rearRight[0]) + sq(y-rearRight[1])); 
         
-        Serial.println(FRDist);
-        Serial.println(FLDist);
-        Serial.println(RLDist);
-        Serial.println(RRDist);
+        //Serial.println(FRDist);
+        //Serial.println(FLDist);
+        //Serial.println(RLDist);
+        //Serial.println(RRDist);
         
+        //Build Power Scale from 0 to 1, map to motor out from 0 to 255
+
+        CWScale = cw/255;
+        CCWScale = ccw/255;
         
         //Front Right
         if(FRDist<1)FRDist = 1;
         FRScale = FRDist/735.39;
-        FROut = 255*FRScale;
-        if(FROut < 75) FROut = 75;
+        FROut = 75+115*FRScale+32.5*CCWScale-32.5*CWScale;
+        //FROut = 255*(CCWScale-CWScale+FRScale);
         
         //Front Left
         if(FLDist<1)FLDist = 1;
         FLScale = FLDist/735.39;
-        FLOut = 255*FLScale;
-        if(FLOut < 75) FLOut = 75;
+        FLOut = 75+115*FLScale+32.5*CWScale-32.5*CCWScale;
+        //FLOut = 255*(CWScale-CCWScale+FLScale);
 
         //Rear Left
         if(RLDist<1)RLDist = 1;
         RLScale = RLDist/735.39;
-        RLOut = 255*RLScale;
-        if(RLOut < 75) RLOut = 75;
+        RLOut = 75+115*RLScale+32.5*CCWScale-32.5*CWScale;
+        //RLOut = 255*(CCWScale-CWScale+RLScale);
         
         //Rear Right
         if(RRDist<1)RRDist = 1;
         RRScale = RRDist/735.39;
-        RROut = 255*RRScale;
-        if(RROut < 75) RROut = 75;
-        /*
-        Serial.println(FRScale); 
-`       */
-
+        RROut = 75+115*RRScale+32.5*CWScale-32.5*CCWScale;
+        //RROut = 255*(CWScale-CCWScale+RRScale);
+        
+        //Outputs 
         Serial.println("Outputs");
         Serial.println("---------");
         Serial.println(runningS);
@@ -152,7 +172,8 @@ void loop() {
         Serial.println(RLOut);
         Serial.println(RROut);
         Serial.println("---------");
-  
+
+        //PWM Control
         if(runningS == "1"){
           Serial.println("Outputs sent");
           analogWrite(FRPin, FROut);
@@ -161,6 +182,7 @@ void loop() {
           analogWrite(RRPin, RROut);
           delay(20);
         }else Serial.println("No outputs sent");
+
 
        runningS == "0"; 
        data = "";
