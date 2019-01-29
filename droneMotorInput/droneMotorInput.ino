@@ -1,3 +1,5 @@
+#include <RH_ASK.h>
+#include <SPI.h>
 /*
  * YAW BRANCH
  * 
@@ -14,6 +16,7 @@
  * Informational Link on Drone Design
  * https://www.dronezon.com/learn-about-drones-quadcopters/how-a-quadcopter-works-with-propellers-and-motors-direction-design-explained/
  */
+RH_ASK driver;
 char key;
 String data = "";
 int startInd, ind1, ind2, ind3, ind4, ind5, endInd;
@@ -51,15 +54,22 @@ double FLOut;
 double RLOut;
 double RROut;
 
-int FRPin = 5;
+int FRPin = 10;
 int FLPin = 6;
-int RLPin = 9;
-int RRPin = 10;
+int RLPin = 5;
+int RRPin = 3;
 
 void setup() {
   Serial.begin(9600);
+  if (!driver.init())
+         Serial.println("init failed");
   delay(1000);
 
+  pinMode(FRPin, OUTPUT);
+  pinMode(FLPin, OUTPUT);
+  pinMode(RLPin, OUTPUT);
+  pinMode(RRPin, OUTPUT);
+  
   analogWrite(FRPin, 0);
   analogWrite(FLPin, 0);
   analogWrite(RLPin, 0);
@@ -80,13 +90,15 @@ void loop() {
 
 
 
-
-
-  while(Serial.available()){
-    key = Serial.read();
-    data.concat(key);
+  uint8_t buf[27];
+    uint8_t buflen = sizeof(buf);
+    while (driver.recv(buf, &buflen)) // Non-blocking
+    {
+      int i;
+      Serial.println((char*)buf); 
+      data = buf;        
     
-    if(key == '>'){ // if end of message received
+    
       startInd = data.indexOf('<');
       ind1 = data.indexOf('/');
       ind2 = data.indexOf('/',ind1+1);
@@ -180,13 +192,13 @@ void loop() {
           analogWrite(FLPin, FLOut);
           analogWrite(RLPin, RLOut);
           analogWrite(RRPin, RROut);
-          delay(20);
+          //delay(20);
         }else Serial.println("No outputs sent");
 
 
-       runningS == "0"; 
+       //runningS == "0"; 
        data = "";
-     }      
-  }
+           
+    } 
   
 }
