@@ -1,21 +1,22 @@
 #include <RH_ASK.h>
 #include <SPI.h>
 /*
- * RADIO BRANCH
+ * RADIO/ELEVATION BRANCH
  * 
  * Pitch & Roll Controll From Power Glove
  * Pitch & Roll:
  *        Impplemented to map drone to exactly glove orientation from behind, imverted scale
  *        Pitch & Roll based off slowing adjacent motors
- * Yaw:  NOTE ~may need to swap cw and ccw motor reading~
- *        Yaw control implemented, glove needs to be Mk. III for finger control then yaw can be input
+ *        
+ * Yaw:  NOTE ~may need to swap f1 and f2 motor reading~
+ *        Yaw control NOT implemented, glove needs to be Mk. III for finger control then yaw can be input
  *        Yaw based off of slowing on pair of diagonal motors & speeding up the other pair of diagional motors
  *       
- * Elevatio:
- *        Likely toreplace yaw with elevation control
+ * Elevation:
+ *        Likely to replace yaw with elevation control on flex sensors 1 and 2 on glove
  *        
  * Issues:        
- *        Can NOT use PWM pin 9 when using 433 radio comm. Writing to it causes the loop to hold still
+ *        Can NOT use PWM pin 9 when using 433 radio comm. Writing to it causes the loop to hold still nnot sure why
  *        
  * Informational Link on Drone Design
  * https://www.dronezon.com/learn-about-drones-quadcopters/how-a-quadcopter-works-with-propellers-and-motors-direction-design-explained/
@@ -25,20 +26,20 @@ char key;
 String data = "";
 int startInd, ind1, ind2, ind3, ind4, ind5, endInd;
 String runningS,xS,yS,zS;
-String cwS,ccwS;
+String f1S,f2S;
 
 double x,y,z;
-double cw,ccw;
+double f1,f2;
 
 double pos[2];
 
 //Based off values of 260
 //rCOS(deg) for x
 //rSIN(deg) for y
-double frontRight[] =  {183,183}; //CCW
-double frontLeft[] = {-183,183};  //CW
-double rearLeft[] = {-183,-183}; //CCW
-double rearRight[] =  {183,-183}; //CW
+double frontRight[] =  {183,183}; //f2
+double frontLeft[] = {-183,183};  //f1
+double rearLeft[] = {-183,-183}; //f2
+double rearRight[] =  {183,-183}; //f1
 
 double FRDist;
 double FLDist;
@@ -50,8 +51,8 @@ double FLScale;
 double RLScale;
 double RRScale;
 
-double CWScale;
-double CCWScale;
+double f1Scale;
+double f2Scale;
 
 double FROut;
 double FLOut;
@@ -63,11 +64,15 @@ int FLPin = 6;
 int RLPin = 5;
 int RRPin = 3;
 
+ 
+
 void setup() {
+
   Serial.begin(9600);
+ 
   if (!driver.init())
          Serial.println("init failed");
-  delay(1000);
+  delay(1000);  
 
   pinMode(FRPin, OUTPUT);
   pinMode(FLPin, OUTPUT);
@@ -85,7 +90,7 @@ void loop() {
 /*
  * Input Format
  * 
- * <runningS/x/y/z/cw/ccw>
+ * <runningS/x/y/z/f1/f2>
  * 
  * ex.   ~neither of these states are possible, just to show max value~
  *  <1/255/255/255/255/255> 
@@ -116,23 +121,23 @@ void loop() {
       yS = data.substring(ind2+1,ind3);
       zS = data.substring(ind3+1,ind4);
 
-      cwS = data.substring(ind4+1,ind5);
-      ccwS = data.substring(ind5+1,endInd);
+      f1S = data.substring(ind4+1,ind5);
+      f2S = data.substring(ind5+1,endInd);
       
       Serial.println("Data: "+data);
       Serial.println("x: "+xS);
       Serial.println("y: "+yS);
       Serial.println("z: "+zS);
-      Serial.println("cw: "+cwS);
-      Serial.println("ccw: "+ccwS);
+      Serial.println("f1: "+f1S);
+      Serial.println("f2: "+f2S);
 
         //Convert string data to #s
         x = xS.toDouble();
         y = yS.toDouble();
         z = zS.toDouble();
 
-        cw = cwS.toDouble();
-        ccw = ccwS.toDouble();
+        f1 = f1S.toDouble();
+        f2 = f2S.toDouble();
         
         
 
@@ -152,32 +157,28 @@ void loop() {
         
         //Build Power Scale from 0 to 1, map to motor out from 0 to 255
 
-        CWScale = cw/255;
-        CCWScale = ccw/255;
+        f1Scale = f1/255;
+        f2Scale = f2/255;
         
         //Front Right
         if(FRDist<1)FRDist = 1;
         FRScale = FRDist/735.39;
-        FROut = 75+115*FRScale+32.5*CCWScale-32.5*CWScale;
-        //FROut = 255*(CCWScale-CWScale+FRScale);
+        FROut = 115 + 75*FRScale + 32.5*f1Scale * - 32.5*f2Scale;
         
         //Front Left
         if(FLDist<1)FLDist = 1;
         FLScale = FLDist/735.39;
-        FLOut = 75+115*FLScale+32.5*CWScale-32.5*CCWScale;
-        //FLOut = 255*(CWScale-CCWScale+FLScale);
+        FLOut = 115 + 75*FLScale + 32.5*f1Scale - 32.5*f2Scale;
 
         //Rear Left
         if(RLDist<1)RLDist = 1;
         RLScale = RLDist/735.39;
-        RLOut = 75+115*RLScale+32.5*CCWScale-32.5*CWScale;
-        //RLOut = 255*(CCWScale-CWScale+RLScale);
+        RLOut = 115 + 75*RLScale + 32.5*f1Scale - 32.5*f2Scale;
         
         //Rear Right
         if(RRDist<1)RRDist = 1;
         RRScale = RRDist/735.39;
-        RROut = 75+115*RRScale+32.5*CWScale-32.5*CCWScale;
-        //RROut = 255*(CWScale-CCWScale+RRScale);
+        RROut = 115 + 75*RRScale + 32.5*f1Scale - 32.5*f2Scale;
         
         //Outputs 
         Serial.println("Outputs");
