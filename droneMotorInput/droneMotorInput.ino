@@ -1,7 +1,7 @@
 #include <RH_ASK.h>
 #include <SPI.h>
 /*
- * RADIO BRANCH
+ * YAW BRANCH
  * 
  * Pitch & Roll Controll From Power Glove
  * Pitch & Roll:
@@ -10,9 +10,6 @@
  * Yaw:  NOTE ~may need to swap cw and ccw motor reading~
  *        Yaw control implemented, glove needs to be Mk. III for finger control then yaw can be input
  *        Yaw based off of slowing on pair of diagonal motors & speeding up the other pair of diagional motors
- *       
- * Elevatio:
- *        Likely toreplace yaw with elevation control
  *        
  * Issues:        
  *        Can NOT use PWM pin 9 when using 433 radio comm. Writing to it causes the loop to hold still
