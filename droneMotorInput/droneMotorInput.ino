@@ -1,19 +1,15 @@
 #include <RH_ASK.h>
 #include <SPI.h>
 /*
- * RADIO/ELEVATION BRANCH
+ * MASTER BRANCH (ELEVATION)
  * 
  * Pitch & Roll Controll From Power Glove
  * Pitch & Roll:
  *        Impplemented to map drone to exactly glove orientation from behind, imverted scale
  *        Pitch & Roll based off slowing adjacent motors
- *        
- * Yaw:  NOTE ~may need to swap f1 and f2 motor reading~
- *        Yaw control NOT implemented, glove needs to be Mk. III for finger control then yaw can be input
- *        Yaw based off of slowing on pair of diagonal motors & speeding up the other pair of diagional motors
- *       
+ *            
  * Elevation:
- *        Likely to replace yaw with elevation control on flex sensors 1 and 2 on glove
+ *        Bound to flex 1 and 2
  *        
  * Issues:        
  *        Can NOT use PWM pin 9 when using 433 radio comm. Writing to it causes the loop to hold still nnot sure why
@@ -92,7 +88,7 @@ void loop() {
  * 
  * <runningS/x/y/z/f1/f2>
  * 
- * ex.   ~neither of these states are possible, just to show max value~
+ * ex.   ~neither of these states are possible, just to show max/min value~
  *  <1/255/255/255/255/255> 
  *  <0/0/0/0/0/0>
  */
